@@ -1,7 +1,6 @@
 package com.ellado.bloombastic;
 
 import com.badlogic.gdx.ApplicationListener;
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -55,13 +54,18 @@ public class bloombastic implements ApplicationListener {
     private enum GameState { MENU, PLAYING, PAUSED, GAME_OVER}
     private GameState gameState = GameState.MENU;
     private int score = 0;
+    private int peopleCounter = 0;
     private BitmapFont font;
     GlyphLayout glyphLayout;
 
-    private float baseScrollSpeed = 2f; // Starting speed
-    private float currentScrollSpeed; // Current obstacle speed
-    private float maxSpeed = 9f; // Maximum speed cap
-    private float speedIncreaseAmount = 0.5f; // Amount to increase speed every 3 seconds
+    private float obstacleBaseScrollSpeed = 2f; // Starting speed
+    private float currentObstacleScrollSpeed; // Current obstacle speed
+    private float roadBaseScrollSpeed = 125f; // Separate speed for road animation
+    private float currentRoadScrollSpeed;
+    private float obstacleMaxSpeed = 9f; // Maximum speed cap
+    private float roadMaxSpeed = 562.5f;
+    private float obstacleSpeedIncreaseAmount = 0.5f; // Amount to increase speed every 3 seconds
+    private float roadSpeedIncreaseAmount = 31.25f;
     private float timeSinceLastSpeedIncrease = 0f; // Timer for speed increasess
     private float scoreTimer = 0f;
 
@@ -87,7 +91,8 @@ public class bloombastic implements ApplicationListener {
 
     @Override
     public void create() {
-        currentScrollSpeed = baseScrollSpeed;
+        currentObstacleScrollSpeed = obstacleBaseScrollSpeed;
+        currentRoadScrollSpeed = roadBaseScrollSpeed;
         font = new BitmapFont();
         font.getData().setScale(1f);
         glyphLayout = new GlyphLayout();
@@ -144,7 +149,7 @@ public class bloombastic implements ApplicationListener {
 
         pauseButtonSprite = new Sprite(pauseButton);
         pauseButtonSprite.setSize(40, 40);
-        pauseButtonSprite.setPosition(40, viewport.getWorldHeight() - 50);
+        pauseButtonSprite.setPosition(40, viewport.getWorldHeight() - pauseButtonSprite.getHeight() - 10);
 
         peopleCounterButtonSprite = new Sprite(peopleCounterButton);
         peopleCounterButtonSprite.setSize(100, 40);
@@ -348,6 +353,7 @@ public class bloombastic implements ApplicationListener {
 
     private void restartGame() {
         score = 0;
+        peopleCounter = 0;
         gameState = GameState.PLAYING;
         isPaused = false;
 
@@ -364,7 +370,8 @@ public class bloombastic implements ApplicationListener {
         trafficIslandSprites.clear();
         peopleSprites.clear();
 
-        currentScrollSpeed = baseScrollSpeed;
+        currentObstacleScrollSpeed = obstacleBaseScrollSpeed;
+        currentRoadScrollSpeed = roadBaseScrollSpeed;
         timeSinceLastSpeedIncrease = 0f;
         currentFrameDuration = 0.4f; // Reset frame duration
         playerAnimation.setFrameDuration(currentFrameDuration); // Update animation frame duration
@@ -373,7 +380,7 @@ public class bloombastic implements ApplicationListener {
 
     private void updateObstacleSpawnDelay() {
         // Adjust spawn delay to maintain desired distance between obstacles
-        obstacleSpawnDelay = (int) (desiredDistance / currentScrollSpeed);
+        obstacleSpawnDelay = (int) (desiredDistance / currentObstacleScrollSpeed);
     }
 
     private void spawnObstacle() {
@@ -450,9 +457,13 @@ public class bloombastic implements ApplicationListener {
         timeSinceLastSpeedIncrease += deltaTime;
         if (timeSinceLastSpeedIncrease >= 3f) { // Every 3 seconds
             // Increase obstacle speed
-            if (currentScrollSpeed < maxSpeed) {
-                currentScrollSpeed += speedIncreaseAmount;
+            if (currentObstacleScrollSpeed < obstacleMaxSpeed) {
+                currentObstacleScrollSpeed += obstacleSpeedIncreaseAmount;
                 updateObstacleSpawnDelay();
+            }
+
+            if (currentRoadScrollSpeed < roadMaxSpeed) {
+                currentRoadScrollSpeed += roadSpeedIncreaseAmount;
             }
 
             // Decrease frame duration (speed up animation)
@@ -465,8 +476,7 @@ public class bloombastic implements ApplicationListener {
             timeSinceLastSpeedIncrease = 0f; // Reset the timer
         }
 
-        // Scroll the road
-        scrollY -= currentScrollSpeed * deltaTime;
+        scrollY -= currentRoadScrollSpeed * deltaTime;
         if (scrollY <= -viewport.getWorldHeight()) {
             scrollY = 0;
         }
@@ -480,21 +490,21 @@ public class bloombastic implements ApplicationListener {
 
         // Update obstacle positions
         for (Sprite crackSprite : crackSprites) {
-            crackSprite.translateY(-currentScrollSpeed);
+            crackSprite.translateY(-currentObstacleScrollSpeed);
             if (crackSprite.getY() + crackSprite.getHeight() < 0) {
                 crackSprites.removeValue(crackSprite, true);
             }
         }
 
         for (Sprite trafficIslandSprite : trafficIslandSprites) {
-            trafficIslandSprite.translateY(-currentScrollSpeed);
+            trafficIslandSprite.translateY(-currentObstacleScrollSpeed);
             if (trafficIslandSprite.getY() + trafficIslandSprite.getHeight() < 0) {
                 trafficIslandSprites.removeValue(trafficIslandSprite, true);
             }
         }
 
         for (Sprite peopleSprite : peopleSprites) {
-            peopleSprite.translateY(-currentScrollSpeed);
+            peopleSprite.translateY(-currentObstacleScrollSpeed);
             if (peopleSprite.getY() + peopleSprite.getHeight() < 0) {
                 peopleSprites.removeValue(peopleSprite, true);
             }
@@ -521,6 +531,7 @@ public class bloombastic implements ApplicationListener {
             if (checkOvalCollision(playerSprite, person)) {
                 score += 50; // Additional points for collecting people
                 peopleSprites.removeIndex(i);
+                peopleCounter++;
             }
         }
     }
@@ -556,8 +567,8 @@ public class bloombastic implements ApplicationListener {
         float roadWidth = viewport.getWorldWidth();
         float roadHeight = viewport.getWorldHeight();
 
-        batch.draw(road, 0, +scrollY, roadWidth, roadHeight);
-        batch.draw(road, 0, +scrollY + roadHeight, roadWidth, roadHeight);
+        batch.draw(road, 0, scrollY, roadWidth, roadHeight);
+        batch.draw(road, 0, scrollY + roadHeight, roadWidth, roadHeight);
 
         if (!gameStarted) {
             playButtonSprite.draw(batch);
@@ -593,12 +604,12 @@ public class bloombastic implements ApplicationListener {
             String gameOverText = "Game Over!";
             glyphLayout.setText(font, gameOverText);
             float gameOverTextWidth = glyphLayout.width;
-            font.draw(batch, gameOverText, pauseBackgroundSprite.getX() + (pauseBackgroundSprite.getWidth() / 2 - gameOverTextWidth/2), pauseBackgroundSprite.getY() + 270);
+            font.draw(batch, gameOverText, pauseBackgroundSprite.getX() + (pauseBackgroundSprite.getWidth() / 2 - gameOverTextWidth / 2), pauseBackgroundSprite.getY() + 270);
 
-            String scoreText = "Score: " + score;
-            glyphLayout.setText(font, scoreText);
+            String finalScoreText = "Score: " + score;
+            glyphLayout.setText(font, finalScoreText);
             float scoreTextWidth = glyphLayout.width;
-            font.draw(batch, scoreText, pauseBackgroundSprite.getX() + (pauseBackgroundSprite.getWidth() / 2 - scoreTextWidth/2), pauseBackgroundSprite.getY() + 255);
+            font.draw(batch, finalScoreText, pauseBackgroundSprite.getX() + (pauseBackgroundSprite.getWidth() / 2 - scoreTextWidth / 2), pauseBackgroundSprite.getY() + 255);
         }
 
         if (isPaused) {
@@ -609,7 +620,16 @@ public class bloombastic implements ApplicationListener {
         }
 
         if (gameStarted) {
-            font.draw(batch, "Score: " + score, 210, viewport.getWorldHeight() - 24);
+            String scoreText = "Score: " + score;
+            glyphLayout.setText(font, scoreText);
+            float scoreTextHeight = glyphLayout.height;
+            font.draw(batch, scoreText, 210, viewport.getWorldHeight() - scoreTextHeight - 12);
+
+            String peopleCountText = String.valueOf(peopleCounter);
+            glyphLayout.setText(font, peopleCountText);
+            float peopleCountTextWidth = glyphLayout.width;
+            float peopleCountTextHeight = glyphLayout.height;
+            font.draw(batch, peopleCountText, peopleCounterButtonSprite.getX() + (peopleCounterButtonSprite.getWidth() / 2 - peopleCountTextWidth / 2) + 15, peopleCounterButtonSprite.getY() + (peopleCounterButtonSprite.getHeight() / 2 + peopleCountTextWidth / 2));
         }
 
         batch.end();
