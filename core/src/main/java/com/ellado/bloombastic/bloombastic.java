@@ -101,7 +101,7 @@ public class bloombastic implements ApplicationListener {
         glyphLayout = new GlyphLayout();
 
         // Load textures (unchanged)
-        player = new Texture("mcSpritesheet.png");
+        player = new Texture("g2_mcSpritesheet.png");
         TextureRegion[][] tmp = TextureRegion.split(player, player.getWidth(), player.getHeight() / 4);
         playerFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -112,13 +112,13 @@ public class bloombastic implements ApplicationListener {
         playerAnimation = new Animation<>(currentFrameDuration, playerFrames); // 0.1f is the frame duration
         stateTime = 0f;
 
-        road = new Texture("road.png");
-        crack1 = new Texture("crack1.png");
-        crack2 = new Texture("crack2.png");
-        crack3 = new Texture("crack3.png");
-        trafficIsland = new Texture("trafficIsland.png");
+        road = new Texture("g2_road.png");
+        crack1 = new Texture("g2_crack1.png");
+        crack2 = new Texture("g2_crack2.png");
+        crack3 = new Texture("g2_crack3.png");
+        trafficIsland = new Texture("g2_trafficIsland.png");
 
-        people1 = new Texture("npcSpritesheet.png");
+        people1 = new Texture("g2_npcSpritesheet.png");
         TextureRegion[][] npcTmp1 = TextureRegion.split(people1, people1.getWidth(), people1.getHeight() / 4); // Assuming 4 frames in a row
         npcFrames1 = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -127,7 +127,7 @@ public class bloombastic implements ApplicationListener {
 
         npcAnimation1 = new Animation<>(0.2f, npcFrames1);
 
-        people2 = new Texture("mcSpritesheet.png");
+        people2 = new Texture("g2_mcSpritesheet.png");
         TextureRegion[][] npcTmp2 = TextureRegion.split(people2, people2.getWidth(), people2.getHeight() / 4); // Assuming 4 frames in a row
         npcFrames2 = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -138,13 +138,13 @@ public class bloombastic implements ApplicationListener {
 
         npcStateTime = 0f;
 
-        pauseButton = new Texture("pauseButton.png");
-        peopleCounterButton = new Texture("peopleCounterButton.png");
-        pauseBackground = new Texture("pauseBackground.png");
-        resumeButton = new Texture("resumeButton.png");
-        restartButton = new Texture("restartButton.png");
-        exitButton = new Texture("exitButton.png");
-        playButton = new Texture("playButton.png");
+        pauseButton = new Texture("g2_pauseButton.png");
+        peopleCounterButton = new Texture("g2_peopleCounterButton.png");
+        pauseBackground = new Texture("g2_pauseBackground.png");
+        resumeButton = new Texture("g2_resumeButton.png");
+        restartButton = new Texture("g2_restartButton.png");
+        exitButton = new Texture("g2_exitButton.png");
+        playButton = new Texture("g2_playButton.png");
 
         road.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         viewport = new FitViewport(300, 560);
