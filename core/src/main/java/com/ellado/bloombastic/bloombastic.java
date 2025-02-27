@@ -16,10 +16,13 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class bloombastic implements ApplicationListener {
 
     // Textures and Sprites (unchanged)
-    Texture road, player, crack1, crack2, crack3, trafficIsland, people, pauseButton, peopleCounterButton, pauseBackground, resumeButton, restartButton, exitButton, playButton;
+    Texture road, player, crack1, crack2, crack3, trafficIsland, people1, people2,  pauseButton, peopleCounterButton, pauseBackground, resumeButton, restartButton, exitButton, playButton;
     SpriteBatch batch;
     FitViewport viewport;
     OrthographicCamera camera;
@@ -33,9 +36,6 @@ public class bloombastic implements ApplicationListener {
     private final float doubleSwipeThreshold = 6.25f; // Lower threshold for the second swipe
     private boolean isFirstSwipe = true; // Whether the current swipe is the first in a potential double swipe
     private final float doubleSwipeTimeThreshold = 5f; // Time window for double swipe (in seconds)
-
-    private final float swipeTimeout = 1000f; // Timeout for swipe detection (in seconds)
-    private float swipeStartTime = 0f; // Time when the swipe started
     private int currentLane = 1; // 0 = left, 1 = middle, 2 = right
     private int targetLane = 1; // Target lane for transition
     private boolean isTransitioning = false; // Whether the player is transitioning between lanes
@@ -72,6 +72,7 @@ public class bloombastic implements ApplicationListener {
     Array<Sprite> crackSprites;
     Array<Sprite> trafficIslandSprites;
     Array<Sprite> peopleSprites;
+    Map<Sprite, Boolean> animatedPeopleMap = new HashMap<>();
     Array<Sprite> obstacles;
 
     // Obstacle spawn logic
@@ -84,8 +85,10 @@ public class bloombastic implements ApplicationListener {
     private float currentFrameDuration = 0.4f; // Starting frame duration
     private final float minFrameDuration = 0.1f; // Minimum frame duration
     private final float frameDurationDecreaseRate = 0.01f; // Rate at which frame duration decreases
-    private Animation<TextureRegion> npcAnimation;
-    private TextureRegion[] npcFrames;
+    private Animation<TextureRegion> npcAnimation1;
+    private Animation<TextureRegion> npcAnimation2;
+    private TextureRegion[] npcFrames1;
+    private TextureRegion[] npcFrames2;
     private float npcStateTime;
 
 
@@ -115,16 +118,24 @@ public class bloombastic implements ApplicationListener {
         crack3 = new Texture("crack3.png");
         trafficIsland = new Texture("trafficIsland.png");
 
-        people = new Texture("npcSpritesheet.png");
-        Texture npcSheet = new Texture("npcSpritesheet.png"); // Ensure this is your NPC spritesheet
-        TextureRegion[][] npcTmp = TextureRegion.split(npcSheet, npcSheet.getWidth(), npcSheet.getHeight() / 4); // Assuming 4 frames in a row
-        npcFrames = new TextureRegion[4];
+        people1 = new Texture("npcSpritesheet.png");
+        TextureRegion[][] npcTmp1 = TextureRegion.split(people1, people1.getWidth(), people1.getHeight() / 4); // Assuming 4 frames in a row
+        npcFrames1 = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
-            npcFrames[i] = npcTmp[i][0]; // Assuming frames are in a single row
+            npcFrames1[i] = npcTmp1[i][0]; // Assuming frames are in a single row
         }
 
-        // Create NPC animation
-        npcAnimation = new Animation<>(0.2f, npcFrames); // 0.2f is the frame duration
+        npcAnimation1 = new Animation<>(0.2f, npcFrames1);
+
+        people2 = new Texture("mcSpritesheet.png");
+        TextureRegion[][] npcTmp2 = TextureRegion.split(people2, people2.getWidth(), people2.getHeight() / 4); // Assuming 4 frames in a row
+        npcFrames2 = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) {
+            npcFrames2[i] = npcTmp2[i][0]; // Assuming frames are in a single row
+        }
+
+        npcAnimation2 = new Animation<>(0.2f, npcFrames2); // 0.2f is the frame duration
+
         npcStateTime = 0f;
 
         pauseButton = new Texture("pauseButton.png");
@@ -404,8 +415,8 @@ public class bloombastic implements ApplicationListener {
             int obstacleType = MathUtils.random(0, 2);
             switch (obstacleType) {
                 case 0: // Crack
-                    Texture selectedTexture = MathUtils.randomBoolean() ? crack1 : (MathUtils.randomBoolean() ? crack2 : crack3);
-                    Sprite crackSprite = new Sprite(selectedTexture);
+                    Texture selectedCrackTexture = MathUtils.randomBoolean() ? crack1 : (MathUtils.randomBoolean() ? crack2 : crack3);
+                    Sprite crackSprite = new Sprite(selectedCrackTexture);
                     crackSprite.setSize(80, 80);
                     crackSprite.setPosition(x, y);
                     crackSprites.add(crackSprite);
@@ -417,10 +428,13 @@ public class bloombastic implements ApplicationListener {
                     trafficIslandSprites.add(trafficIslandSprite);
                     break;
                 case 2: // People
-                    Sprite peopleSprite = new Sprite(people);
+                    boolean isAnimated = MathUtils.randomBoolean();
+                    Texture selectedPeopleTexture = isAnimated ? people1 : people2;
+                    Sprite peopleSprite = new Sprite(selectedPeopleTexture);
                     peopleSprite.setSize(80, 100);
                     peopleSprite.setPosition(x, y);
                     peopleSprites.add(peopleSprite);
+                    animatedPeopleMap.put(peopleSprite, isAnimated);
                     break;
             }
         }
@@ -586,7 +600,15 @@ public class bloombastic implements ApplicationListener {
         }
 
         for (Sprite peopleSprite : peopleSprites) {
-            TextureRegion currentNpcFrame = npcAnimation.getKeyFrame(npcStateTime, true);
+            boolean isAnimated = animatedPeopleMap.get(peopleSprite); // Retrieve the flag
+            TextureRegion currentNpcFrame;
+            if (isAnimated) {
+                // Use the second NPC animation
+                currentNpcFrame = npcAnimation1.getKeyFrame(npcStateTime, true);
+            } else {
+                // Use the first NPC animation
+                currentNpcFrame = npcAnimation2.getKeyFrame(npcStateTime, true);
+            }
             batch.draw(currentNpcFrame, peopleSprite.getX(), peopleSprite.getY(), peopleSprite.getWidth(), peopleSprite.getHeight());
         }
 
@@ -647,6 +669,8 @@ public class bloombastic implements ApplicationListener {
         font.dispose();
         road.dispose();
         player.dispose();
+        people1.dispose();
+        people2.dispose();
         crack1.dispose();
         crack2.dispose();
         crack3.dispose();
