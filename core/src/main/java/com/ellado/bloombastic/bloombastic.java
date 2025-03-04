@@ -101,7 +101,7 @@ public class bloombastic implements ApplicationListener {
         glyphLayout = new GlyphLayout();
 
         // Load textures (unchanged)
-        player = new Texture("g2_mcSpritesheet.png");
+        player = new Texture("g2_amaraSpritesheet.png");
         TextureRegion[][] tmp = TextureRegion.split(player, player.getWidth(), player.getHeight() / 4);
         playerFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -118,7 +118,7 @@ public class bloombastic implements ApplicationListener {
         crack3 = new Texture("g2_crack3.png");
         trafficIsland = new Texture("g2_trafficIsland.png");
 
-        people1 = new Texture("g2_npcSpritesheet.png");
+        people1 = new Texture("g2_boySpritesheet.png");
         TextureRegion[][] npcTmp1 = TextureRegion.split(people1, people1.getWidth(), people1.getHeight() / 4); // Assuming 4 frames in a row
         npcFrames1 = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -127,7 +127,7 @@ public class bloombastic implements ApplicationListener {
 
         npcAnimation1 = new Animation<>(0.2f, npcFrames1);
 
-        people2 = new Texture("g2_mcSpritesheet.png");
+        people2 = new Texture("g2_girlSpritesheet.png");
         TextureRegion[][] npcTmp2 = TextureRegion.split(people2, people2.getWidth(), people2.getHeight() / 4); // Assuming 4 frames in a row
         npcFrames2 = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
@@ -155,7 +155,7 @@ public class bloombastic implements ApplicationListener {
 
         // Initialize sprites (unchanged)
         playerSprite = new Sprite(player);
-        playerSprite.setSize(80, 80);
+        playerSprite.setSize(40, 125);
         playerSprite.setPosition(viewport.getWorldWidth()/2 - playerSprite.getWidth()/2, 75);
 
         pauseButtonSprite = new Sprite(pauseButton);
@@ -372,7 +372,7 @@ public class bloombastic implements ApplicationListener {
         targetLane = 1;
         isTransitioning = false;
         transitionProgress = 0f;
-        playerSprite.setPosition(lanes[1], 75);
+        playerSprite.setPosition(viewport.getWorldWidth()/2 - playerSprite.getWidth()/2, 75);
 
         scrollY = 0f;
 
@@ -457,7 +457,7 @@ public class bloombastic implements ApplicationListener {
             float startX = lanes[currentLane];
             float endX = lanes[targetLane];
             float playerX = startX + (endX - startX) * transitionProgress;
-            playerSprite.setX(playerX);
+            playerSprite.setX(playerX + 21f);
         }
 
         // Increment score every 1 second
